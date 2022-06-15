@@ -100,14 +100,10 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
     }, []);
 
     const [state, setState] = useStateSafe<S>(() => {
-      const firstState = merge({}, initialState, defaultState, controlledState);
+      const firstState = merge({}, initialState, defaultState);
 
       return updateState(firstState, firstState);
     });
-
-    React.useEffect(() => {
-      setState((prevState) => (controlledState ? merge({}, prevState, controlledState) : prevState));
-    }, [controlledState, setState]);
 
     const handleState: SetStateContext<S> = React.useCallback(
       (updatedState) => {
@@ -122,7 +118,11 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
       [onChange, setState, updateState],
     );
 
-    return <ctx.Provider value={{ state, setState: handleState }}>{children}</ctx.Provider>;
+    return (
+      <ctx.Provider value={{ state: controlledState ? merge({}, state, controlledState) : state, setState: handleState }}>
+        {children}
+      </ctx.Provider>
+    );
   };
 
   const useCtx = <P extends Path<S>>(
