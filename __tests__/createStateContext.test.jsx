@@ -14,7 +14,7 @@ test('@drpiou/react-state:createStateContext', () => {
 
   const sagas = [
     {
-      keys: ['firstname', 'lastname'],
+      keys: ['firstname', 'lastname', 'name'],
       saga: (state) => {
         return { name: [state.firstname, state.lastname].join(' ') };
       },

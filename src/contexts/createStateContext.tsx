@@ -8,7 +8,9 @@ import pick from 'lodash/pick';
 import React from 'react';
 
 export type StateProviderProps<S> = {
+  state?: DeepPartial<S>;
   defaultState?: DeepPartial<S>;
+  onChange?: (state: S) => void;
 };
 
 export type StateContextOptions<S = DeepRecord<string, unknown>> = {
@@ -51,15 +53,16 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
   const options = { ...DEFAULT_OPTIONS, ...contextOptions } as StateContextOptions<S>;
 
   const Provider = (props: React.PropsWithChildren<StateProviderProps<S>>): JSX.Element => {
-    const { defaultState, children } = props;
+    const { state: controlledState, defaultState, onChange, children } = props;
 
     const updateState = React.useCallback((prevState: S, updatedState?: DeepPartial<S>): S => {
       const newState = merge({}, prevState, updatedState);
 
       let newStateWithSaga = merge({}, newState);
+      let updatedStateWithSaga = merge({}, updatedState);
 
       map(options.sagas, (saga) => {
-        const updatedStatePaths = paths(newStateWithSaga);
+        const updatedStatePaths = paths(updatedStateWithSaga);
 
         if (intersection(updatedStatePaths, castArray(saga.keys as string[])).length) {
           try {
@@ -70,7 +73,8 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
             }
 
             if (sagaState !== null) {
-              newStateWithSaga = merge({}, newStateWithSaga, sagaState);
+              newStateWithSaga = merge(newStateWithSaga, sagaState);
+              updatedStateWithSaga = merge(updatedStateWithSaga, sagaState);
             }
           } catch (error: unknown) {
             if (options.throwSagaError) {
@@ -95,25 +99,27 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
       return newStateWithSaga;
     }, []);
 
-    const [state, setState] = useStateSafe<S>(
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      () => {
-        const firstState = merge({}, initialState, defaultState);
+    const [state, setState] = useStateSafe<S>(() => {
+      const firstState = merge({}, initialState, defaultState, controlledState);
 
-        return updateState(firstState, firstState);
-      },
-    );
+      return updateState(firstState, firstState);
+    });
+
+    React.useEffect(() => {
+      setState((prevState) => (controlledState ? merge({}, prevState, controlledState) : prevState));
+    }, [controlledState, setState]);
 
     const handleState: SetStateContext<S> = React.useCallback(
       (updatedState) => {
-        setState((prevState) =>
-          typeof updatedState === 'function'
-            ? updateState(prevState, updatedState(prevState))
-            : updateState(prevState, updatedState),
-        );
+        setState((prevState) => {
+          const newState = updateState(prevState, typeof updatedState === 'function' ? updatedState(prevState) : updatedState);
+
+          setTimeout(() => onChange?.(newState));
+
+          return newState;
+        });
       },
-      [setState, updateState],
+      [onChange, setState, updateState],
     );
 
     return <ctx.Provider value={{ state, setState: handleState }}>{children}</ctx.Provider>;

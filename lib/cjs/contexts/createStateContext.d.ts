@@ -1,7 +1,9 @@
 import { DeepPartial, DeepRecord, Path, PathValue } from '@drpiou/ts-utils';
 import React from 'react';
 export declare type StateProviderProps<S> = {
+    state?: DeepPartial<S>;
     defaultState?: DeepPartial<S>;
+    onChange?: (state: S) => void;
 };
 export declare type StateContextOptions<S = DeepRecord<string, unknown>> = {
     commitSagaOnError?: boolean;
