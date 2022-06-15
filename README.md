@@ -3,7 +3,7 @@
 ![GitHub](https://img.shields.io/github/license/drpiou/react-state)
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/drpiou/react-state)
 ![Jest tests](https://img.shields.io/badge/passed%20test-1-green)
-![Jest tests](https://img.shields.io/badge/stage-beta-important)
+![Jest tests](https://img.shields.io/badge/stage-experimental-important)
 ![GitHub all releases](https://img.shields.io/github/downloads/drpiou/react-state/total)
 
 The `@drpiou/react-state` package creates a global state context.
@@ -158,7 +158,9 @@ type useState<S> = <P extends Path<S>>(
 type StateProvider<S> = (props: StateProviderProps<S>) => JSX.Element;
 
 type StateProviderProps<S> = {
+  state?: Partial<S>;
   defaultState?: Partial<S>;
+  onChange?: (state: S) => void;
 };
 
 type StateContextOptions<S = DeepRecord<string, unknown>> = {
