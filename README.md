@@ -158,7 +158,9 @@ type useState<S> = <P extends Path<S>>(
 type StateProvider<S> = (props: StateProviderProps<S>) => JSX.Element;
 
 type StateProviderProps<S> = {
+  state?: Partial<S>;
   defaultState?: Partial<S>;
+  onChange?: (state: S) => void;
 };
 
 type StateContextOptions<S = DeepRecord<string, unknown>> = {
