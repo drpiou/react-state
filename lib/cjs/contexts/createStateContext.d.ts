@@ -18,7 +18,7 @@ export declare type StateSaga<S, P = Path<S>> = {
     saga: StateSagaCallback<S>;
 };
 export declare type StateSagaCallback<S> = (state: S) => DeepPartial<S> | null;
-declare type SetStateContext<S> = (state: DeepPartial<S> | ((state: S) => DeepPartial<S>)) => void;
+declare type SetStateContext<S> = (state: DeepPartial<S> | ((state: S) => DeepPartial<S> | null)) => void;
 declare const createStateContext: <S extends DeepRecord<string, unknown>>(initialState: S, contextOptions?: StateContextOptions<S> | undefined) => [<P extends Path<S>>(keys: P[]) => { [K in P]: PathValue<S, K>; } & Pick<{
     state: S;
     setState: SetStateContext<S>;
