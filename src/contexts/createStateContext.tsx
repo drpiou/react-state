@@ -29,7 +29,7 @@ export type StateSaga<S, P = Path<S>> = {
 
 export type StateSagaCallback<S> = (state: S) => DeepPartial<S> | null;
 
-type SetStateContext<S> = (state: DeepPartial<S> | ((state: S) => DeepPartial<S>)) => void;
+type SetStateContext<S> = (state: DeepPartial<S> | ((state: S) => DeepPartial<S> | null)) => void;
 
 const DEFAULT_OPTIONS: StateContextOptions = {
   commitSagaOnError: false,
@@ -108,11 +108,17 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
     const handleState: SetStateContext<S> = React.useCallback(
       (updatedState) => {
         setState((prevState) => {
-          const newState = updateState(prevState, typeof updatedState === 'function' ? updatedState(prevState) : updatedState);
+          const newState = typeof updatedState === 'function' ? updatedState(prevState) : updatedState;
 
-          setTimeout(() => onChange?.(newState));
+          if (newState === null) {
+            return prevState;
+          }
 
-          return newState;
+          const newUpdatedState = updateState(prevState, newState);
+
+          setTimeout(() => onChange?.(newUpdatedState));
+
+          return newUpdatedState;
         });
       },
       [onChange, setState, updateState],

@@ -35,7 +35,7 @@ yarn add @drpiou/react-state
 
 ### `state/config/index.ts`
 
-```typescript jsx
+```typescript
 import { userState } from './user';
 
 export type StateList = typeof state;
@@ -50,7 +50,7 @@ export const state = {
 
 ### `state/config/user/index.ts`
 
-```typescript jsx
+```typescript
 export type User = {
   firstname: string;
   lastname: string;
@@ -68,7 +68,7 @@ export const userState: User = {
 
 ### `state/sagas/index.ts`
 
-```typescript jsx
+```typescript
 import { StateSaga } from '@drpiou/react-state';
 import { StateList } from '../config';
 import { setName } from './setName';
@@ -83,7 +83,7 @@ export const sagas: StateSaga<StateList>[] = [
 
 ### `state/sagas/setName/index.ts`
 
-```typescript jsx
+```typescript
 import { StateSagaCallback } from '@drpiou/react-state';
 import { StateList } from '../../config';
 
@@ -143,7 +143,7 @@ export default MyComponent;
 
 ## Documentation
 
-```typescript jsx
+```typescript
 type createStateContext = <S extends DeepRecord<string, unknown>>(
   initialState: S,
   contextOptions?: StateContextOptions<S>,
@@ -180,6 +180,6 @@ type StateSaga<S, P = Path<S>> = {
 type StateSagaCallback<S> = (state: S) => DeepPartial<S> | null;
 
 type SetStateContext<S> = (
-  state: DeepPartial<S> | ((state: S) => DeepPartial<S>),
+  state: DeepPartial<S> | ((state: S) => DeepPartial<S> | null),
 ) => void;
 ```
