@@ -180,6 +180,6 @@ type StateSaga<S, P = Path<S>> = {
 type StateSagaCallback<S> = (state: S) => DeepPartial<S> | null;
 
 type SetStateContext<S> = (
-  state: DeepPartial<S> | ((state: S) => DeepPartial<S>),
+  state: DeepPartial<S> | ((state: S) => DeepPartial<S> | null),
 ) => void;
 ```
