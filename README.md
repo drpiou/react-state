@@ -4,7 +4,6 @@
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/drpiou/react-state)
 ![Jest tests](https://img.shields.io/badge/passed%20test-1-green)
 ![Jest tests](https://img.shields.io/badge/stage-experimental-important)
-![GitHub all releases](https://img.shields.io/github/downloads/drpiou/react-state/total)
 
 The `@drpiou/react-state` package creates a global state context.
 
