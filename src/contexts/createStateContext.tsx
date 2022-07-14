@@ -5,7 +5,8 @@ import intersection from 'lodash/intersection';
 import map from 'lodash/map';
 import merge from 'lodash/merge';
 import pick from 'lodash/pick';
-import React from 'react';
+import uniq from 'lodash/uniq';
+import React, { ContextType, createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 
 export type StateProviderProps<S> = {
   state?: DeepPartial<S>;
@@ -42,7 +43,7 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
   initialState: S,
   contextOptions?: StateContextOptions<S>,
 ): [typeof useCtx, typeof Provider] => {
-  const ctx = React.createContext<{
+  const ctx = createContext<{
     state: S;
     setState: SetStateContext<S>;
   }>({
@@ -52,37 +53,41 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
 
   const options = { ...DEFAULT_OPTIONS, ...contextOptions } as StateContextOptions<S>;
 
-  const Provider = (props: React.PropsWithChildren<StateProviderProps<S>>): JSX.Element => {
+  const Provider = (props: PropsWithChildren<StateProviderProps<S>>): JSX.Element => {
     const { state: controlledState, defaultState, onChange, children } = props;
 
-    const updateState = React.useCallback((prevState: S, updatedState?: DeepPartial<S>): S => {
+    const handleChange = useRef(onChange);
+
+    handleChange.current = onChange;
+
+    const updateState = useCallback((prevState: S, updatedState?: DeepPartial<S>): S => {
       const newState = merge({}, prevState, updatedState);
 
       let newStateWithSaga = merge({}, newState);
-      let updatedStateWithSaga = merge({}, updatedState);
+      let updatedStatePaths = paths(updatedState || {}) as string[];
 
       map(options.sagas, (saga) => {
-        const updatedStatePaths = paths(updatedStateWithSaga);
+        const keys = castArray(saga.keys as string[]);
 
-        if (intersection(updatedStatePaths, castArray(saga.keys as string[])).length) {
+        if (intersection(updatedStatePaths, keys).length) {
           try {
             const sagaState = saga.saga(newStateWithSaga);
 
-            if (options.log && (!options.logFilters || intersection(options.logFilters, saga.keys as string[]))) {
+            if (options.log && (!options.logFilters || intersection(options.logFilters, keys))) {
               log('state:saga:run', { keys: saga.keys, sagaState });
             }
 
             if (sagaState !== null) {
               newStateWithSaga = merge(newStateWithSaga, sagaState);
-              updatedStateWithSaga = merge(updatedStateWithSaga, sagaState);
+              updatedStatePaths = uniq([...updatedStatePaths, ...(paths(sagaState) as string[])]);
             }
           } catch (error: unknown) {
-            if (options.throwSagaError) {
-              throw error;
-            }
-
             if (options.log) {
               logError('state:saga:error', saga.keys, { error });
+            }
+
+            if (options.throwSagaError) {
+              throw error;
             }
 
             if (!options.ignoreSagaError) {
@@ -105,23 +110,31 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
       return updateState(firstState, firstState);
     });
 
-    const handleState: SetStateContext<S> = React.useCallback(
+    useEffect(() => {
+      console.log('__DEV__:createStateContext@useEffect', { state });
+
+      handleChange.current?.(state);
+    }, [state]);
+
+    const handleState: SetStateContext<S> = useCallback(
       (updatedState) => {
         setState((prevState) => {
-          const newState = typeof updatedState === 'function' ? updatedState(prevState) : updatedState;
+          if (typeof updatedState === 'function') {
+            const newState = updatedState(prevState);
 
-          if (newState === null) {
-            return prevState;
+            if (newState === null) {
+              return prevState;
+            }
+
+            return updateState(prevState, newState);
+          } else {
+            return updateState(prevState, updatedState);
           }
 
-          const newUpdatedState = updateState(prevState, newState);
-
-          setTimeout(() => onChange?.(newUpdatedState));
-
-          return newUpdatedState;
+          // setTimeout(() => onChange?.(newUpdatedState));
         });
       },
-      [onChange, setState, updateState],
+      [setState, updateState],
     );
 
     return (
@@ -131,16 +144,14 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
     );
   };
 
-  const useCtx = <P extends Path<S>>(
-    keys: P[],
-  ): { [K in P]: PathValue<S, K> } & Pick<React.ContextType<typeof ctx>, 'setState'> => {
-    const c = React.useContext(ctx);
+  const useCtx = <P extends Path<S>>(keys: P[]): { [K in P]: PathValue<S, K> } & Pick<ContextType<typeof ctx>, 'setState'> => {
+    const c = useContext(ctx);
 
     if (c === undefined) {
       throw new Error("Couldn't find a context object. Is your component inside StateProvider?");
     }
 
-    return React.useMemo(
+    return useMemo(
       () => ({ ...(pick(c.state, keys) as { [K in P]: PathValue<S, K> }), setState: c.setState }),
       [c.setState, c.state, keys],
     );
