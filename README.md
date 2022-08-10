@@ -1,9 +1,8 @@
 # `@drpiou/react-state`
 
-![GitHub](https://img.shields.io/github/license/drpiou/react-state)
-![GitHub package.json version](https://img.shields.io/github/package-json/v/drpiou/react-state)
-![Jest tests](https://img.shields.io/badge/passed%20test-1-green)
-![Jest tests](https://img.shields.io/badge/stage-experimental-important)
+![Licence](https://img.shields.io/github/license/drpiou/react-state)
+![Package.json version](https://img.shields.io/github/package-json/v/drpiou/react-state)
+![Stage](https://img.shields.io/badge/stage-experimental-important)
 
 The `@drpiou/react-state` package creates a global state context.
 

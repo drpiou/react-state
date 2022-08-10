@@ -1,5 +1,5 @@
 import { useStateSafe } from '@drpiou/react-utils';
-import { DeepPartial, DeepRecord, log, logError, logInfo, Path, paths, PathValue } from '@drpiou/ts-utils';
+import { DeepPartial, DeepRecord, logError, logInfo, Path, paths, PathValue } from '@drpiou/ts-utils';
 import castArray from 'lodash/castArray';
 import intersection from 'lodash/intersection';
 import map from 'lodash/map';
@@ -9,9 +9,10 @@ import uniq from 'lodash/uniq';
 import React, { ContextType, createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 
 export type StateProviderProps<S> = {
-  state?: DeepPartial<S>;
+  state?: S;
   defaultState?: DeepPartial<S>;
   onChange?: (state: S) => void;
+  onRef?: (ref: StateRef<S>) => void;
 };
 
 export type StateContextOptions<S = DeepRecord<string, unknown>> = {
@@ -21,6 +22,11 @@ export type StateContextOptions<S = DeepRecord<string, unknown>> = {
   logFilters?: Path<S>[];
   sagas?: StateSaga<S>[];
   throwSagaError?: boolean;
+};
+
+export type StateRef<S> = {
+  state: S;
+  setState: SetStateContext<S>;
 };
 
 export type StateSaga<S, P = Path<S>> = {
@@ -43,10 +49,7 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
   initialState: S,
   contextOptions?: StateContextOptions<S>,
 ): [typeof useCtx, typeof Provider] => {
-  const ctx = createContext<{
-    state: S;
-    setState: SetStateContext<S>;
-  }>({
+  const ctx = createContext<StateRef<S>>({
     state: initialState,
     setState: () => initialState,
   });
@@ -54,11 +57,13 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
   const options = { ...DEFAULT_OPTIONS, ...contextOptions } as StateContextOptions<S>;
 
   const Provider = (props: PropsWithChildren<StateProviderProps<S>>): JSX.Element => {
-    const { state: controlledState, defaultState, onChange, children } = props;
+    const { state: controlledState, defaultState, onChange, onRef, children } = props;
 
     const handleChange = useRef(onChange);
+    const handleRef = useRef(onRef);
 
     handleChange.current = onChange;
+    handleRef.current = onRef;
 
     const updateState = useCallback((prevState: S, updatedState?: DeepPartial<S>): S => {
       const newState = merge({}, prevState, updatedState);
@@ -74,7 +79,7 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
             const sagaState = saga.saga(newStateWithSaga);
 
             if (options.log && (!options.logFilters || intersection(options.logFilters, keys))) {
-              log('state:saga:run', { keys: saga.keys, sagaState });
+              logInfo('state:saga:run', { keys: saga.keys, sagaState });
             }
 
             if (sagaState !== null) {
@@ -110,12 +115,6 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
       return updateState(firstState, firstState);
     });
 
-    useEffect(() => {
-      console.log('__DEV__:createStateContext@useEffect', { state });
-
-      handleChange.current?.(state);
-    }, [state]);
-
     const handleState: SetStateContext<S> = useCallback(
       (updatedState) => {
         setState((prevState) => {
@@ -130,18 +129,26 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
           } else {
             return updateState(prevState, updatedState);
           }
-
-          // setTimeout(() => onChange?.(newUpdatedState));
         });
       },
       [setState, updateState],
     );
 
-    return (
-      <ctx.Provider value={{ state: controlledState ? merge({}, state, controlledState) : state, setState: handleState }}>
-        {children}
-      </ctx.Provider>
-    );
+    const refState = controlledState || state;
+
+    const ref = useMemo(() => {
+      return { state: refState, setState: handleState };
+    }, [handleState, refState]);
+
+    useEffect(() => {
+      handleChange.current?.(state);
+    }, [state]);
+
+    useEffect(() => {
+      handleRef.current?.(ref);
+    }, [ref]);
+
+    return <ctx.Provider value={ref}>{children}</ctx.Provider>;
   };
 
   const useCtx = <P extends Path<S>>(keys: P[]): { [K in P]: PathValue<S, K> } & Pick<ContextType<typeof ctx>, 'setState'> => {
@@ -151,10 +158,9 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
       throw new Error("Couldn't find a context object. Is your component inside StateProvider?");
     }
 
-    return useMemo(
-      () => ({ ...(pick(c.state, keys) as { [K in P]: PathValue<S, K> }), setState: c.setState }),
-      [c.setState, c.state, keys],
-    );
+    return useMemo(() => {
+      return { ...(pick(c.state, keys) as { [K in P]: PathValue<S, K> }), setState: c.setState };
+    }, [c, keys]);
   };
 
   return [useCtx, Provider];

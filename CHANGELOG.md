@@ -6,7 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-## [0.0.3] - 2022-07-14
+## [0.0.3] - 2022-xx-xx
+
+### Added
+
+- added onRef to work outside React
 
 ### Changed
 
@@ -14,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 
-- internal fixes
+- fixed import
 
 ## [0.0.2] - 2022-07-11
 
