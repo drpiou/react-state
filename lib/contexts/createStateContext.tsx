@@ -8,6 +8,7 @@ import merge from 'lodash/merge';
 import reduce from 'lodash/reduce';
 import uniq from 'lodash/uniq';
 import React, {
+  ComponentProps,
   ComponentType,
   ContextType,
   createContext,
@@ -177,9 +178,9 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
 
   const withState = <K extends { [key: string]: Path<S> }>(
     keys: K,
-  ): (<C extends ComponentType, Props = C extends ComponentType<infer I> ? I : never>(
-    Component: ComponentType<Props>,
-  ) => (props: Omit<Props, keyof WithStateProps<S, K>>) => JSX.Element) => {
+  ): (<C extends ComponentType, P extends ComponentProps<C>>(
+    Component: ComponentType<P>,
+  ) => (props: Omit<P, keyof WithStateProps<S, K>>) => JSX.Element) => {
     return ((Component: ComponentType): ComponentType => {
       const MemoComponent = memo(Component);
 

@@ -1,5 +1,5 @@
 import { DeepPartial, DeepRecord, Path } from '@drpiou/ts-utils';
-import React, { ComponentType, ContextType, PropsWithChildren } from 'react';
+import React, { ComponentProps, ComponentType, ContextType, PropsWithChildren } from 'react';
 export declare type StateContextOptions<S = DeepRecord<string, unknown>> = {
     commitSagaOnError?: boolean;
     ignoreSagaError?: boolean;
@@ -27,5 +27,5 @@ export declare type WithStateProps<S, P = unknown> = P & Pick<StateRef<S>, 'setS
 declare type SetStateContext<S> = (state: DeepPartial<S> | ((state: S) => DeepPartial<S> | null)) => void;
 declare const createStateContext: <S extends DeepRecord<string, unknown>>(initialState: S, contextOptions?: StateContextOptions<S> | undefined) => [() => StateRef<S>, (props: React.PropsWithChildren<StateProviderProps<S>>) => JSX.Element, <K extends {
     [key: string]: Path<S>;
-}>(keys: K) => <C extends React.ComponentType<{}>, Props = C extends React.ComponentType<infer I> ? I : never>(Component: React.ComponentType<Props>) => (props: Omit<Props, "setState" | keyof K>) => JSX.Element];
+}>(keys: K) => <C extends React.ComponentType<{}>, P extends React.ComponentProps<C>>(Component: React.ComponentType<P>) => (props: Omit<P, "setState" | keyof K>) => JSX.Element];
 export default createStateContext;
