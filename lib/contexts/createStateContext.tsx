@@ -1,19 +1,24 @@
-import { useStateSafe } from '@drpiou/react-utils';
-import { DeepPartial, DeepRecord, logError, logInfo, Path, paths, PathValue } from '@drpiou/ts-utils';
+import { getComponentName, useStateSafe } from '@drpiou/react-utils';
+import { DeepPartial, DeepRecord, logError, logInfo, Path, paths } from '@drpiou/ts-utils';
 import castArray from 'lodash/castArray';
+import get from 'lodash/get';
 import intersection from 'lodash/intersection';
 import map from 'lodash/map';
 import merge from 'lodash/merge';
-import pick from 'lodash/pick';
+import reduce from 'lodash/reduce';
 import uniq from 'lodash/uniq';
-import React, { ContextType, createContext, PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
-
-export type StateProviderProps<S> = {
-  state?: S;
-  defaultState?: DeepPartial<S>;
-  onChange?: (state: S) => void;
-  onRef?: (ref: StateRef<S>) => void;
-};
+import React, {
+  ComponentType,
+  ContextType,
+  createContext,
+  memo,
+  PropsWithChildren,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+} from 'react';
 
 export type StateContextOptions<S = DeepRecord<string, unknown>> = {
   commitSagaOnError?: boolean;
@@ -22,6 +27,13 @@ export type StateContextOptions<S = DeepRecord<string, unknown>> = {
   logFilters?: Path<S>[];
   sagas?: StateSaga<S>[];
   throwSagaError?: boolean;
+};
+
+export type StateProviderProps<S> = {
+  state?: S;
+  defaultState?: DeepPartial<S>;
+  onChange?: (state: S) => void;
+  onRef?: (ref: StateRef<S>) => void;
 };
 
 export type StateRef<S> = {
@@ -36,6 +48,8 @@ export type StateSaga<S, P = Path<S>> = {
 
 export type StateSagaCallback<S> = (state: S) => DeepPartial<S> | null;
 
+export type WithStateProps<S, P = unknown> = P & Pick<StateRef<S>, 'setState'>;
+
 type SetStateContext<S> = (state: DeepPartial<S> | ((state: S) => DeepPartial<S> | null)) => void;
 
 const DEFAULT_OPTIONS: StateContextOptions = {
@@ -48,7 +62,7 @@ const DEFAULT_OPTIONS: StateContextOptions = {
 const createStateContext = <S extends DeepRecord<string, unknown>>(
   initialState: S,
   contextOptions?: StateContextOptions<S>,
-): [typeof useCtx, typeof Provider] => {
+): [typeof useCtx, typeof Provider, typeof withState] => {
   const ctx = createContext<StateRef<S>>({
     state: initialState,
     setState: () => initialState,
@@ -134,11 +148,11 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
       [setState, updateState],
     );
 
-    const refState = controlledState || state;
+    const stateValue = controlledState || state;
 
     const ref = useMemo(() => {
-      return { state: refState, setState: handleState };
-    }, [handleState, refState]);
+      return { state: stateValue, setState: handleState };
+    }, [handleState, stateValue]);
 
     useEffect(() => {
       handleChange.current?.(state);
@@ -151,19 +165,52 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
     return <ctx.Provider value={ref}>{children}</ctx.Provider>;
   };
 
-  const useCtx = <P extends Path<S>>(keys: P[]): { [K in P]: PathValue<S, K> } & Pick<ContextType<typeof ctx>, 'setState'> => {
+  const useCtx = (): ContextType<typeof ctx> => {
     const c = useContext(ctx);
 
     if (c === undefined) {
       throw new Error("Couldn't find a context object. Is your component inside StateProvider?");
     }
 
-    return useMemo(() => {
-      return { ...(pick(c.state, keys) as { [K in P]: PathValue<S, K> }), setState: c.setState };
-    }, [c, keys]);
+    return c;
   };
 
-  return [useCtx, Provider];
+  const withState = <K extends { [key: string]: Path<S> }>(
+    keys: K,
+  ): (<C extends ComponentType, Props = C extends ComponentType<infer I> ? I : never>(
+    Component: ComponentType<Props>,
+  ) => (props: Omit<Props, keyof WithStateProps<S, K>>) => JSX.Element) => {
+    return ((Component: ComponentType): ComponentType => {
+      const MemoComponent = memo(Component);
+
+      const WithComponent = (props: any): JSX.Element => {
+        const c = useContext(ctx);
+
+        const useState = useMemo(() => {
+          return {
+            ...reduce(
+              keys,
+              (acc, path, key) => {
+                acc[key] = get(c.state, path, undefined);
+
+                return acc;
+              },
+              {} as { [key: string]: unknown },
+            ),
+            setState: c.setState,
+          };
+        }, [c]);
+
+        return <MemoComponent {...props} {...useState} />;
+      };
+
+      WithComponent.displayName = getComponentName(Component);
+
+      return WithComponent;
+    }) as never;
+  };
+
+  return [useCtx, Provider, withState];
 };
 
 export default createStateContext;

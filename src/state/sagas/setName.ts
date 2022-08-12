@@ -1,5 +1,5 @@
-import { StateSagaCallback } from '../lib';
-import { StateList } from './config';
+import { StateSagaCallback } from '../../../lib';
+import { StateList } from '../index';
 
 export const setName: StateSagaCallback<StateList> = (state) => {
   return {

@@ -1,2 +1,9 @@
-export type { StateProviderProps, StateContextOptions, StateSaga, StateSagaCallback } from './contexts/createStateContext';
+export type {
+  StateContextOptions,
+  StateProviderProps,
+  StateRef,
+  StateSaga,
+  StateSagaCallback,
+  WithStateProps,
+} from './contexts/createStateContext';
 export { default as createStateContext } from './contexts/createStateContext';

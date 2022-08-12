@@ -1,5 +1,5 @@
-import { StateSaga } from '../lib';
-import { StateList } from './config';
+import { StateSaga } from '../../../lib';
+import { StateList } from '../index';
 import { setName } from './setName';
 
 export const sagas: StateSaga<StateList>[] = [
