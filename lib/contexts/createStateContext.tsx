@@ -51,7 +51,7 @@ export type StateSagaCallback<S> = (state: S) => DeepPartial<S> | null;
 
 export type WithStateProps<S, P = unknown> = P & Pick<StateRef<S>, 'setState'>;
 
-type SetStateContext<S> = (state: DeepPartial<S> | ((state: S) => DeepPartial<S> | null)) => void;
+export type SetStateContext<S> = (state: DeepPartial<S> | ((state: S) => DeepPartial<S> | null)) => void;
 
 const DEFAULT_OPTIONS: StateContextOptions = {
   commitSagaOnError: false,

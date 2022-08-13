@@ -31,7 +31,7 @@ yarn add @drpiou/react-state
 
 ## Example
 
-### `state/config/index.ts`
+### `state/index.ts`
 
 ```typescript
 import { userState } from './user';
@@ -46,7 +46,7 @@ export const state = {
 };
 ```
 
-### `state/config/user/index.ts`
+### `state/user.ts`
 
 ```typescript
 export type User = {
@@ -68,7 +68,7 @@ export const userState: User = {
 
 ```typescript
 import { StateSaga } from '@drpiou/react-state';
-import { StateList } from '../config';
+import { StateList } from '../index';
 import { setName } from './setName';
 
 export const sagas: StateSaga<StateList>[] = [
@@ -83,7 +83,7 @@ export const sagas: StateSaga<StateList>[] = [
 
 ```typescript
 import { StateSagaCallback } from '@drpiou/react-state';
-import { StateList } from '../../config';
+import { StateList } from '../index';
 
 export const setName: StateSagaCallback<StateList> = (state) => {
   return {
@@ -92,25 +92,47 @@ export const setName: StateSagaCallback<StateList> = (state) => {
 };
 ```
 
-### `contexts/state/index.tsx`
+### `contexts/state.ts`
 
-```typescript jsx
-import { createStateContext } from '@drpiou/react-state';
-import { state } from '../../state/config';
-import { sagas } from '../../state/sagas';
+```typescript
+import { Path, PathValue } from '@drpiou/ts-utils';
+import {
+  createStateContext,
+  StateRef,
+  WithStateProps,
+} from '@drpiou/react-state';
+import { state, StateList } from '../state';
+import { sagas } from '../state/sagas';
 
-export const [useGlobalState, GlobalStateProvider] = createStateContext(state, {
-  sagas,
-});
+export type GlobalStateProps<P extends { [key: string]: unknown }> =
+  WithStateProps<StateList, P>;
+
+export type GlobalStatePathProps<P extends { [key: string]: Path<StateList> }> =
+  WithStateProps<StateList, { [K in keyof P]: PathValue<StateList, P[K]> }>;
+
+export type GlobalStateRef = StateRef<StateList>;
+
+export const [useGlobalState, GlobalStateProvider, withGlobalState] =
+  createStateContext(state, {
+    sagas,
+    log: true,
+  });
 ```
 
 ### `App.tsx`
 
 ```typescript jsx
+import MyComponent from './components/MyComponent';
+import MyComponentWithState from './components/MyComponentWithState';
 import { GlobalStateProvider } from './contexts/state';
 
 const App = (): JSX.Element => {
-  return <GlobalStateProvider>{/* ... */}</GlobalStateProvider>;
+  return (
+    <GlobalStateProvider onChange={console.log} onRef={console.log}>
+      <MyComponent />
+      <MyComponentWithState />
+    </GlobalStateProvider>
+  );
 };
 
 export default App;
@@ -122,62 +144,108 @@ export default App;
 import { useGlobalState } from '../../contexts/state';
 
 const MyComponent = (): JSX.Element => {
-  const { user, setState } = useGlobalState(['user']);
+  const { state, setState } = useGlobalState();
 
-  const handlePress = (): void => {
+  console.log('MyComponent: re-render');
+
+  const handleClick1 = (): void => {
     setState({ user: { firstname: String(Date.now()) } });
   };
 
+  const handleClick2 = (): void => {
+    setState({ isLoggedIn: !state.isLoggedIn });
+  };
+
   return (
-    <div>
-      <p>{user.name}</p>
-      <div onClick={handlePress} />
-    </div>
+    <>
+      <div className={'card'}>
+        <button onClick={handleClick1}>{state.user.name}</button>
+      </div>
+      <div className={'card'}>
+        <button onClick={handleClick2}>{String(state.isLoggedIn)}</button>
+      </div>
+    </>
   );
 };
 
 export default MyComponent;
 ```
 
+### `components/MyComponentWithState/index.tsx`
+
+```typescript jsx
+import { GlobalStatePathProps, withGlobalState } from '../../contexts/theme';
+
+const MyComponentWithState = withGlobalState({ isLoggedIn: 'isLoggedIn' })(
+  (props: GlobalStatePathProps<{ isLoggedIn: 'isLoggedIn' }>): JSX.Element => {
+    const { isLoggedIn, setState } = props;
+
+    console.log('MyComponentWithState: re-render');
+
+    const handleClick = (): void => {
+      setState({ isLoggedIn: !isLoggedIn });
+    };
+
+    return (
+      <div className={'card'}>
+        <button onClick={handleClick}>{String(isLoggedIn)}</button>
+      </div>
+    );
+  },
+);
+
+export default MyComponentWithState;
+```
+
 ## Documentation
 
 ```typescript
-type createStateContext = <S extends DeepRecord<string, unknown>>(
+import { DeepPartial, DeepRecord, Path } from '@drpiou/ts-utils';
+
+export type createStateContext = <S extends DeepRecord<string, unknown>>(
   initialState: S,
   contextOptions?: StateContextOptions<S>,
-) => [useState<S>, StateProvider<S>];
+) => [useState<S>, React.ComponentType<StateProviderProps<S>>, withState<S>];
 
-type useState<S> = <P extends Path<S>>(
-  keys: P[],
-) => { [K in P]: PathValue<S, K> } & {
+export type useState<S> = () => StateRef<S>;
+
+export type withState<T, Key> = <K extends { [key: string]: Path<S> }>(
+  keys: K,
+) => <C extends React.ComponentType, P extends React.ComponentProps<C>>(
+  Component: React.ComponentType<P>,
+) => (props: Omit<P, keyof WithStateProps<S, K>>) => JSX.Element;
+
+export type StateContextOptions<S = DeepRecord<string, unknown>> = {
+  commitSagaOnError?: boolean;
+  ignoreSagaError?: boolean;
+  log?: boolean;
+  logFilters?: Path<S>[];
+  sagas?: StateSaga<S>[];
+  throwSagaError?: boolean;
+};
+
+export type StateProviderProps<S> = {
+  state?: S;
+  defaultState?: DeepPartial<S>;
+  onChange?: (state: S) => void;
+  onRef?: (ref: StateRef<S>) => void;
+};
+
+export type StateRef<S> = {
+  state: S;
   setState: SetStateContext<S>;
 };
 
-type StateProvider<S> = (props: StateProviderProps<S>) => JSX.Element;
-
-type StateProviderProps<S> = {
-  state?: Partial<S>;
-  defaultState?: Partial<S>;
-  onChange?: (state: S) => void;
-};
-
-type StateContextOptions<S = DeepRecord<string, unknown>> = {
-  commitSagaOnError?: boolean; // default: false
-  ignoreSagaError?: boolean; // default: false
-  log?: boolean; // default: false
-  logFilters?: Path<S>[]; // default: undefined = all keys
-  sagas?: StateSaga<S>[];
-  throwSagaError?: boolean; // default: true
-};
-
-type StateSaga<S, P = Path<S>> = {
+export type StateSaga<S, P = Path<S>> = {
   keys: P | P[];
   saga: StateSagaCallback<S>;
 };
 
-type StateSagaCallback<S> = (state: S) => DeepPartial<S> | null;
+export type StateSagaCallback<S> = (state: S) => DeepPartial<S> | null;
 
-type SetStateContext<S> = (
+export type WithStateProps<S, P = unknown> = P & Pick<StateRef<S>, 'setState'>;
+
+export type SetStateContext<S> = (
   state: DeepPartial<S> | ((state: S) => DeepPartial<S> | null),
 ) => void;
 ```

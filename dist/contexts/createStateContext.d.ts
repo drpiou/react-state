@@ -24,7 +24,7 @@ export declare type StateSaga<S, P = Path<S>> = {
 };
 export declare type StateSagaCallback<S> = (state: S) => DeepPartial<S> | null;
 export declare type WithStateProps<S, P = unknown> = P & Pick<StateRef<S>, 'setState'>;
-declare type SetStateContext<S> = (state: DeepPartial<S> | ((state: S) => DeepPartial<S> | null)) => void;
+export declare type SetStateContext<S> = (state: DeepPartial<S> | ((state: S) => DeepPartial<S> | null)) => void;
 declare const createStateContext: <S extends DeepRecord<string, unknown>>(initialState: S, contextOptions?: StateContextOptions<S> | undefined) => [() => StateRef<S>, (props: React.PropsWithChildren<StateProviderProps<S>>) => JSX.Element, <K extends {
     [key: string]: Path<S>;
 }>(keys: K) => <C extends React.ComponentType<{}>, P extends React.ComponentProps<C>>(Component: React.ComponentType<P>) => (props: Omit<P, "setState" | keyof K>) => JSX.Element];
