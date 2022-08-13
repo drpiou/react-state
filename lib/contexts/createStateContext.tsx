@@ -1,5 +1,5 @@
 import { getComponentName, useStateSafe } from '@drpiou/react-utils';
-import { DeepPartial, DeepRecord, logError, logInfo, Path, paths } from '@drpiou/ts-utils';
+import { logError, logInfo, paths } from '@drpiou/ts-utils';
 import castArray from 'lodash/castArray';
 import get from 'lodash/get';
 import intersection from 'lodash/intersection';
@@ -7,19 +7,8 @@ import map from 'lodash/map';
 import merge from 'lodash/merge';
 import reduce from 'lodash/reduce';
 import uniq from 'lodash/uniq';
-import React, {
-  ComponentProps,
-  ComponentType,
-  ContextType,
-  createContext,
-  memo,
-  PropsWithChildren,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-} from 'react';
+import React, { createContext, memo, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
+import { DeepPartial, DeepRecord, Path } from './types';
 
 export type StateContextOptions<S = DeepRecord<string, unknown>> = {
   commitSagaOnError?: boolean;
@@ -71,7 +60,7 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
 
   const options = { ...DEFAULT_OPTIONS, ...contextOptions } as StateContextOptions<S>;
 
-  const Provider = (props: PropsWithChildren<StateProviderProps<S>>): JSX.Element => {
+  const Provider = (props: React.PropsWithChildren<StateProviderProps<S>>): JSX.Element => {
     const { state: controlledState, defaultState, onChange, onRef, children } = props;
 
     const handleChange = useRef(onChange);
@@ -166,7 +155,7 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
     return <ctx.Provider value={ref}>{children}</ctx.Provider>;
   };
 
-  const useCtx = (): ContextType<typeof ctx> => {
+  const useCtx = (): React.ContextType<typeof ctx> => {
     const c = useContext(ctx);
 
     if (c === undefined) {
@@ -178,10 +167,10 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
 
   const withState = <K extends { [key: string]: Path<S> }>(
     keys: K,
-  ): (<C extends ComponentType, P extends ComponentProps<C>>(
-    Component: ComponentType<P>,
+  ): (<C extends React.ComponentType, P extends React.ComponentProps<C>>(
+    Component: React.ComponentType<P>,
   ) => (props: Omit<P, keyof WithStateProps<S, K>>) => JSX.Element) => {
-    return ((Component: ComponentType): ComponentType => {
+    return ((Component: React.ComponentType): React.ComponentType => {
       const MemoComponent = memo(Component);
 
       const WithComponent = (props: any): JSX.Element => {
