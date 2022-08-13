@@ -1,5 +1,5 @@
-import { DeepPartial, DeepRecord, Path } from '@drpiou/ts-utils';
-import React, { ComponentProps, ComponentType, ContextType, PropsWithChildren } from 'react';
+import React from 'react';
+import { DeepPartial, DeepRecord, Path } from './types';
 export declare type StateContextOptions<S = DeepRecord<string, unknown>> = {
     commitSagaOnError?: boolean;
     ignoreSagaError?: boolean;
