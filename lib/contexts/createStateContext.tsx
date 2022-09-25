@@ -107,7 +107,7 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
       });
 
       if (options.log) {
-        logInfo('state:update', { prevState, updatedState, newState, newStateWithSaga });
+        logInfo('state:update', { prevState, updatedState, newState: newStateWithSaga });
       }
 
       return newStateWithSaga;
@@ -166,7 +166,7 @@ const createStateContext = <S extends DeepRecord<string, unknown>>(
   };
 
   const withState = <K extends { [key: string]: Path<S> }>(
-    keys: K,
+    keys?: K,
   ): (<C extends React.ComponentType, P extends React.ComponentProps<C>>(
     Component: React.ComponentType<P>,
   ) => (props: Omit<P, keyof WithStateProps<S, K>>) => JSX.Element) => {

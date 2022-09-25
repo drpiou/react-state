@@ -5,10 +5,12 @@ import { sagas } from '../state/sagas';
 
 export type GlobalStateProps<P extends { [key: string]: unknown }> = WithStateProps<StateList, P>;
 
-export type GlobalStatePathProps<P extends { [key: string]: Path<StateList> }> = WithStateProps<
+export type WithGlobalStatePathProps<P extends { [key: string]: Path<StateList> }> = WithStateProps<
   StateList,
   { [K in keyof P]: PathValue<StateList, P[K]> }
 >;
+
+export type WithGlobalStateProps = WithStateProps<StateList>;
 
 export type GlobalStateRef = StateRef<StateList>;
 

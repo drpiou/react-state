@@ -27,5 +27,5 @@ export declare type WithStateProps<S, P = unknown> = P & Pick<StateRef<S>, 'setS
 export declare type SetStateContext<S> = (state: DeepPartial<S> | ((state: S) => DeepPartial<S> | null)) => void;
 declare const createStateContext: <S extends DeepRecord<string, unknown>>(initialState: S, contextOptions?: StateContextOptions<S> | undefined) => [() => StateRef<S>, (props: React.PropsWithChildren<StateProviderProps<S>>) => JSX.Element, <K extends {
     [key: string]: Path<S>;
-}>(keys: K) => <C extends React.ComponentType<{}>, P extends React.ComponentProps<C>>(Component: React.ComponentType<P>) => (props: Omit<P, "setState" | keyof K>) => JSX.Element];
+}>(keys?: K | undefined) => <C extends React.ComponentType<{}>, P extends React.ComponentProps<C>>(Component: React.ComponentType<P>) => (props: Omit<P, "setState" | keyof K>) => JSX.Element];
 export default createStateContext;
