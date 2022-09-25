@@ -4,7 +4,7 @@ import { setName } from './setName';
 
 export const sagas: StateSaga<StateList>[] = [
   {
-    keys: ['user.firstname', 'user.lastname'],
+    keys: ['user'],
     saga: setName,
   },
 ];

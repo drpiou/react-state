@@ -1,7 +1,7 @@
 import { log, logWarn } from '@drpiou/ts-utils';
 import React from 'react';
 import './App.css';
-import { GlobalStatePathProps, GlobalStateProvider, GlobalStateRef, useGlobalState, withGlobalState } from './contexts/state';
+import { WithGlobalStatePathProps, GlobalStateProvider, GlobalStateRef, useGlobalState, withGlobalState } from './contexts/state';
 import { StateList } from './state';
 
 const App = (): JSX.Element => {
@@ -37,7 +37,7 @@ const Thing = (): JSX.Element => {
   return (
     <>
       <div className={'card'}>
-        <button onClick={handleClick1}>{state.user.name}</button>
+        <button onClick={handleClick1}>{state.user?.name ?? 'no-name'}</button>
       </div>
       <div className={'card'}>
         <button onClick={handleClick2}>{String(state.isLoggedIn)}</button>
@@ -47,7 +47,7 @@ const Thing = (): JSX.Element => {
 };
 
 const WithThing = withGlobalState({ isLoggedIn: 'isLoggedIn' })(
-  (props: GlobalStatePathProps<{ isLoggedIn: 'isLoggedIn' }>): JSX.Element => {
+  (props: WithGlobalStatePathProps<{ isLoggedIn: 'isLoggedIn' }>): JSX.Element => {
     const { isLoggedIn, setState } = props;
 
     logWarn('WithThing: re-render');

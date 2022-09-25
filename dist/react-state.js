@@ -2987,8 +2987,7 @@ const wa = wi.exports.jsx, ZO = {
       }), a.log && In("state:update", {
         prevState: C,
         updatedState: G,
-        newState: I,
-        newStateWithSaga: P
+        newState: P
       }), P;
     }, []), [R, F] = Ju(() => {
       const C = fr({}, e, p);

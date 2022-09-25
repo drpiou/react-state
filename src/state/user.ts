@@ -5,7 +5,7 @@ export type User = {
   age: number;
 };
 
-export const userState: User = {
+export const userState: User | null = {
   firstname: 'A',
   lastname: 'B',
   name: '',
