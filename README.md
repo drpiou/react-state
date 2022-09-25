@@ -107,10 +107,12 @@ import { sagas } from '../state/sagas';
 export type GlobalStateProps<P extends { [key: string]: unknown }> =
   WithStateProps<StateList, P>;
 
-export type GlobalStatePathProps<P extends { [key: string]: Path<StateList> }> =
+export type GlobalStateRef = StateRef<StateList>;
+
+export type WithGlobalStatePathProps<P extends { [key: string]: Path<StateList> }> =
   WithStateProps<StateList, { [K in keyof P]: PathValue<StateList, P[K]> }>;
 
-export type GlobalStateRef = StateRef<StateList>;
+export type WithGlobalStateProps = WithStateProps<StateList>;
 
 export const [useGlobalState, GlobalStateProvider, withGlobalState] =
   createStateContext(state, {
@@ -174,10 +176,10 @@ export default MyComponent;
 ### `components/MyComponentWithState/index.tsx`
 
 ```typescript jsx
-import { GlobalStatePathProps, withGlobalState } from '../../contexts/theme';
+import { WithGlobalStatePathProps, withGlobalState } from '../../contexts/theme';
 
 const MyComponentWithState = withGlobalState({ isLoggedIn: 'isLoggedIn' })(
-  (props: GlobalStatePathProps<{ isLoggedIn: 'isLoggedIn' }>): JSX.Element => {
+  (props: WithGlobalStatePathProps<{ isLoggedIn: 'isLoggedIn' }>): JSX.Element => {
     const { isLoggedIn, setState } = props;
 
     console.log('MyComponentWithState: re-render');

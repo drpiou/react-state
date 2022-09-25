@@ -1,6 +1,6 @@
 {
   "name": "@drpiou/react-state",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Creates a global state context.",
   "keywords": [],
   "author": "Alex <hello@drpiou.dev>",

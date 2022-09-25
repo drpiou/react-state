@@ -37,7 +37,7 @@ const Thing = (): JSX.Element => {
   return (
     <>
       <div className={'card'}>
-        <button onClick={handleClick1}>{state.user.name}</button>
+        <button onClick={handleClick1}>{state.user?.name ?? 'no-name'}</button>
       </div>
       <div className={'card'}>
         <button onClick={handleClick2}>{String(state.isLoggedIn)}</button>
